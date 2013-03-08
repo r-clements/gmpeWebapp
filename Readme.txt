@@ -35,13 +35,9 @@ To use the app:
 -A sample dataset is loaded automatically. If you have your own dataset that you would like to default to, just name it "sample.csv".
 -You can also choose a different file to use by clicking the checkbox "Choose a csv file ..."
 
-Most everything else is pretty self explanatory. The only thing that might cause confusion is the linear and mixed models. Currently, I have implemented both a linear model fit to the residuals, as well as a mixed effects model fit to the residuals. The mixed effects model has this random effect structure automatically included:
+Most everything else is pretty self explanatory. The only thing that might cause confusion is the linear and mixed models. Currently, I have implemented both a linear model fit to the residuals, as well as a mixed effects model fit to the residuals. The mixed effects model automatically includes a random effect for "event.num".
 
-a_i + b_i * Rhyp
-
-which means that there is a random intercept for each event, and a random slope on Rhyp for each event. I may provide more control to the user in the future.
-
-Lastly, regarding the spatial residuals plot, the "smooth" option fits a thin-plate spline to the residuals using the generalized cross-validation criteria in the gam function. This plot is just to get a general overview of the spatial residuals, but I may provide more control on this smoothing to the user.
+Lastly, regarding the two spatial residuals plots, the "smooth" option fits a thin-plate spline to the residuals using the generalized cross-validation criteria in the gam function. This plot is just to get a general overview of the spatial residuals, but I may provide more control on this smoothing to the user if it's useful.
 
 
 
