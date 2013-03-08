@@ -22,9 +22,16 @@ Use install.packages("package.name") to install these.
 
 To run the app:
 
+If all files are on your machine already, then do this:
+
 setwd("path to directory that holds the ui.R, server.R, jp, and sample.csv files")
 library(shiny)
 runApp()
+
+Or, if you don't have the files on your machine, you can do this:
+
+library(shiny)
+shiny::runGitHub('gmpeWebapp', 'r-clements')
 
 ------------------------------------------------------
 ------------------------------------------------------
