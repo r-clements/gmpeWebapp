@@ -1,0 +1,48 @@
+AUTHOR: Robert Clements
+DATE: March 7, 2013
+SUMMARY: Readme.txt file for GMPE evaluation R "shiny" web application
+----------------------------------------------------------------------
+
+Required packages to run app:
+
+ggplot2
+verification
+lme4
+grid
+plyr
+mgcv
+RColorBrewer
+ggmap
+
+Use install.packages("package.name") to install these.
+
+------------------------------------------------------
+------------------------------------------------------
+
+
+To run the app:
+
+setwd("path to directory that holds the ui.R, server.R, jp, and sample.csv files")
+library(shiny)
+runApp()
+
+------------------------------------------------------
+------------------------------------------------------
+
+To use the app:
+
+-First choose from the dropdown menu if you want to do "Residual analysis" or look at "Scores"
+-A sample dataset is loaded automatically. If you have your own dataset that you would like to default to, just name it "sample.csv".
+-You can also choose a different file to use by clicking the checkbox "Choose a csv file ..."
+
+Most everything else is pretty self explanatory. The only thing that might cause confusion is the linear and mixed models. Currently, I have implemented both a linear model fit to the residuals, as well as a mixed effects model fit to the residuals. The mixed effects model has this random effect structure automatically included:
+
+a_i + b_i * Rhyp
+
+which means that there is a random intercept for each event, and a random slope on Rhyp for each event. I may provide more control to the user in the future.
+
+Lastly, regarding the spatial residuals plot, the "smooth" option fits a thin-plate spline to the residuals using the generalized cross-validation criteria in the gam function. This plot is just to get a general overview of the spatial residuals, but I may provide more control on this smoothing to the user.
+
+
+
+
