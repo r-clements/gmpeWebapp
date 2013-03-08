@@ -132,6 +132,11 @@ shinyServer(function(input, output) {
   
   subdata <- reactive({
     gm.data <- data()
+    if (is.null(input$event_num) || is.null(input$model_name) || 
+          is.null(input$Rhyp) || is.null(input$Mag) || is.null(input$VS30) ||
+          is.null(input$input_eqtype) || is.null(input$input_siteclass)) {
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     gm.data <- gm.data[gm.data$model %in% input$model_name, ]
     gm.data <- gm.data[(gm.data$Rhyp <= max(input$Rhyp))&(gm.data$Rhyp >= min(input$Rhyp)), ]
@@ -144,6 +149,11 @@ shinyServer(function(input, output) {
   
   subdata2 <- reactive({
     gm.data <- data()
+    if (is.null(input$event_num) || is.null(input$model_name) || 
+          is.null(input$Rhyp) || is.null(input$Mag) || is.null(input$VS30) ||
+          is.null(input$input_eqtype) || is.null(input$input_siteclass)) {
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     gm.data <- gm.data[gm.data$model %in% input$model_name2, ]
     gm.data <- gm.data[(gm.data$Rhyp <= max(input$Rhyp))&(gm.data$Rhyp >= min(input$Rhyp)), ]
@@ -167,6 +177,9 @@ shinyServer(function(input, output) {
   
   output$Rhyp <- renderUI({
     gm.data <- data()
+    if(is.null(input$event_num)){
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     min.dist <- floor(min(gm.data$Rhyp))
     max.dist <- ceiling(max(gm.data$Rhyp))
@@ -181,6 +194,9 @@ shinyServer(function(input, output) {
   
   output$Mag <- renderUI({
     gm.data <- data()
+    if(is.null(input$event_num)){
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     min.mag <- floor(min(gm.data$mag))
     max.mag <- ceiling(max(gm.data$mag))
@@ -195,6 +211,9 @@ shinyServer(function(input, output) {
   
   output$VS30 <- renderUI({
     gm.data <- data()
+    if(is.null(input$event_num)){
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     min.vs30 <- floor(min(gm.data$AVS30))
     max.vs30 <- ceiling(max(gm.data$AVS30))
@@ -209,6 +228,9 @@ shinyServer(function(input, output) {
   
   output$eqtype <- renderUI({
     gm.data <- data()
+    if(is.null(input$event_num)){
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     eq.types <- unique(gm.data$eq.type)
     selectInput(inputId = "input_eqtype",
@@ -220,6 +242,9 @@ shinyServer(function(input, output) {
   
   output$siteClass <- renderUI({
     gm.data <- data()
+    if(is.null(input$event_num)){
+      return(NULL)
+    }
     gm.data <- gm.data[gm.data$event.num %in% input$event_num, ]
     sites <- unique(gm.data$siteClass)
     selectInput(inputId = "input_siteclass",
@@ -231,7 +256,9 @@ shinyServer(function(input, output) {
   
   output$plot_resid <- renderPlot({
     gm.data <- subdata()
-    
+    if(is.null(gm.data)){
+      return()
+    }
     p0 <- ggQQ(gm.data)
     p0.1 <- ggplot() + geom_point(data = gm.data, aes(x = pred, y = resids))
     p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = resids))
@@ -258,6 +285,9 @@ shinyServer(function(input, output) {
   
   output$plot_unex_resid <- renderPlot({
     gm.data <- subdata()
+    if(is.null(gm.data)){
+      return()
+    }
     lm.formula <- react_formula()
     re.formula <- paste0(lm.formula, "+ (1|event.num)")
     model.fit <- lmer(re.formula, data = gm.data)
@@ -293,6 +323,9 @@ shinyServer(function(input, output) {
   
   output$summary <- renderPrint({
     gm.data <- subdata()
+    if(is.null(gm.data)){
+      return()
+    }
     lm.formula <- react_formula()
     model.fit <- lm(lm.formula, data = gm.data)
     summary(model.fit)
@@ -300,6 +333,9 @@ shinyServer(function(input, output) {
   
   output$summary.re <- renderPrint({
     gm.data <- subdata()
+    if(is.null(gm.data)){
+      return()
+    }
     lm.formula <- react_formula()
     re.formula <- paste0(lm.formula, "+ (1|event.num)")
     model.fit <- lmer(re.formula, data = gm.data)
@@ -309,6 +345,9 @@ shinyServer(function(input, output) {
   output$spatplot <- renderPlot({
     if(input$spatial) {
       gm.data <- subdata()
+      if(is.null(gm.data)){
+        return()
+      }
       spatial.data <- data.frame(lon = gm.data$stlon, lat = gm.data$stlat, 
                                  residual = gm.data$resids)
       if(input$view_type == "ave") {
@@ -352,6 +391,9 @@ shinyServer(function(input, output) {
   output$spatplot2 <- renderPlot({
     if(input$spatial) {
     gm.data <- subdata()
+    if(is.null(gm.data)){
+      return()
+    }
     lm.formula <- react_formula()
     re.formula <- paste0(lm.formula, "+ (1|event.num)")
     model.fit <- lmer(re.formula, data = gm.data)
@@ -398,17 +440,26 @@ shinyServer(function(input, output) {
   
   output$scores <- renderTable({
     gm.data <- subdata2()
+    if(is.null(gm.data)){
+      return()
+    }
     temp <- make.scores(gm.data)
     temp
   })
   
   output$runningPlot <- renderPlot({
     gm.data <- data()
+    if(is.null(gm.data)){
+      return()
+    }
     n <- length(unique(gm.data$model))
     model.cols <- data.frame(unique(gm.data$model), gg_color_hue(n))
     model.cols <- data.frame(lapply(model.cols, as.character), stringsAsFactors=FALSE)
     
     gm.data <- subdata2()
+    if(is.null(gm.data)){
+      return()
+    }
     temp <- make.running.scores(gm.data)
     temp$Event.num <- as.character(temp$Event.num)
     
