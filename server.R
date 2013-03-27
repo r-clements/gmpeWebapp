@@ -84,6 +84,7 @@ shinyServer(function(input, output) {
     }
     
     data <- read.csv(path, h = TRUE)
+    data$resids <- (data$resids - mean(data$resids))/sd(data$resids)
     data
   })
   
@@ -260,14 +261,21 @@ shinyServer(function(input, output) {
       return()
     }
     p0 <- ggQQ(gm.data)
-    p0.1 <- ggplot() + geom_point(data = gm.data, aes(x = pred, y = resids))
-    p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = resids))
-    p2 <- ggplot() + geom_point(data = gm.data, aes(x = AVS30, y = resids))
-    p3 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(mag), y = resids))
-    p4 <- ggplot() + geom_boxplot(data = gm.data, aes(x = siteClass, y = resids))
-    p5 <- ggplot() + geom_boxplot(data = gm.data, aes(x = eq.type, y = resids))
+    p0.1 <- ggplot() + geom_point(data = gm.data, aes(x = pred, y = resids)) + 
+      xlab("Predicted value") + ylab("Standardized residual")
+    p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = resids)) +
+      xlab("Hypocentral distance") + ylab("Standardized residual")
+    p2 <- ggplot() + geom_point(data = gm.data, aes(x = AVS30, y = resids)) +
+      xlab("VS30") + ylab("Standardized residual")
+    p3 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(mag), y = resids)) +
+      xlab("Magnitude") + ylab("Standardized residual")
+    p4 <- ggplot() + geom_boxplot(data = gm.data, aes(x = siteClass, y = resids)) +
+      xlab("Site class") + ylab("Standardized residual")
+    p5 <- ggplot() + geom_boxplot(data = gm.data, aes(x = eq.type, y = resids)) +
+      xlab("EQ type") + ylab("Standardized residual")
     p6 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(event.num), y = resids)) +
-      theme(axis.text.x=element_text(angle = 90))
+      theme(axis.text.x=element_text(angle = 90)) +
+      xlab("Event number") + ylab("Standardized residual")
     plots <- list(p0, p0.1, p1, p2, p3, p4, p5, p6)
     layout <- matrix(c(1,2,3,4,5,6,7,8), nrow = 4, byrow = TRUE)
     grid.newpage()
@@ -295,16 +303,24 @@ shinyServer(function(input, output) {
     gm.data$pred.fit <- fitted(model.fit)
     tmp.data <- gm.data
     tmp.data$resids <- gm.data$unex.resids
+    tmp.data$resids <- (tmp.data$resids - mean(tmp.data$resids))/sd(tmp.data$resids)
     
     p0 <- ggQQ(tmp.data)
-    p0.1 <- ggplot() + geom_point(data = gm.data, aes(x = pred.fit, y = unex.resids))
-    p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = unex.resids))
-    p2 <- ggplot() + geom_point(data = gm.data, aes(x = AVS30, y = unex.resids))
-    p3 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(mag), y = unex.resids))
-    p4 <- ggplot() + geom_boxplot(data = gm.data, aes(x = siteClass, y = unex.resids))
-    p5 <- ggplot() + geom_boxplot(data = gm.data, aes(x = eq.type, y = unex.resids))
+    p0.1 <- ggplot() + geom_point(data = gm.data, aes(x = pred.fit, y = unex.resids)) +
+    xlab("Predicted value") + ylab("Standardized residual")
+    p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = unex.resids)) +
+      xlab("Hypocentral distance") + ylab("Standardized residual")
+    p2 <- ggplot() + geom_point(data = gm.data, aes(x = AVS30, y = unex.resids)) +
+      xlab("VS30") + ylab("Standardized residual")
+    p3 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(mag), y = unex.resids)) +
+      xlab("Magnitude") + ylab("Standardized residual")
+    p4 <- ggplot() + geom_boxplot(data = gm.data, aes(x = siteClass, y = unex.resids)) +
+      xlab("Site class") + ylab("Standardized residual")
+    p5 <- ggplot() + geom_boxplot(data = gm.data, aes(x = eq.type, y = unex.resids)) +
+      xlab("EQ type") + ylab("Standardized residual")
     p6 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(event.num), y = unex.resids)) +
-      theme(axis.text.x=element_text(angle = 90))
+      theme(axis.text.x=element_text(angle = 90)) +
+      xlab("Event number") + ylab("Standardized residual")
     plots <- list(p0, p0.1, p1, p2, p3, p4, p5, p6)
     layout <- matrix(c(1,2,3,4,5,6,7,8), nrow = 4, byrow = TRUE)
     grid.newpage()
@@ -374,7 +390,7 @@ shinyServer(function(input, output) {
       load("jp")
       p <- ggmap(jp)
       p <- p +
-        geom_point(data = sp, mapping = aes(x = lon, y = lat, colour = pred)) +
+        geom_point(data = sp, mapping = aes(x = lon, y = lat, colour = pred), size=5) +
         scale_colour_gradientn(colours=cols, 
                                name="Residual", values = cutoffs, limits = c(lower,upper),
                                labels=labs, breaks=brks, rescaler =
@@ -424,7 +440,7 @@ shinyServer(function(input, output) {
     load("jp")
     p <- ggmap(jp)
     p <- p +
-      geom_point(data = sp, mapping = aes(x = lon, y = lat, colour = pred)) +
+      geom_point(data = sp, mapping = aes(x = lon, y = lat, colour = pred), size=5) +
       scale_colour_gradientn(colours=cols, 
                              name="Residual", values = cutoffs, limits = c(lower,upper),
                              labels=labs, breaks=brks, rescaler =
