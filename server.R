@@ -88,28 +88,6 @@ shinyServer(function(input, output) {
     data
   })
   
-  react_formula <- reactive({
-    formula <- paste0("resids~")
-    if(input$cb_rhyp)
-      formula <- paste0(formula, "Rhyp ")
-    
-    if(input$cb_mag)
-      formula <- paste0(formula, "mag ")
-    
-    if(input$cb_avs30)
-      formula <- paste0(formula, "AVS30 ")
-    
-    if(input$cb_eqtype)
-      formula <- paste0(formula, "eq.type ")
-    
-    if(input$cb_siteclass)
-      formula <- paste0(formula, "siteClass ")
-    
-    formula <- gsub(" ", "+", formula)
-    formula <- substr(formula, 1, nchar(formula)-1)
-    formula
-  })
-  
   output$Models <- renderUI({
     model.data <- data()
     model.names <- unique(model.data$model)
@@ -296,27 +274,69 @@ shinyServer(function(input, output) {
     if(is.null(gm.data)){
       return()
     }
-    lm.formula <- react_formula()
-    re.formula <- paste0(lm.formula, "+ (1|event.num)")
-    model.fit <- lmer(re.formula, data = gm.data)
+    tmp <- gm.data[,c("resids", "Rhyp", "mag", "AVS30", "eq.type", "siteClass", "event.num")]
+    if(length(unique(tmp$event.num)) > 1) {
+      if(length(unique(tmp$eq.type)) == 1) {
+        tmp <- subset(tmp, select=-c(eq.type))
+      }
+      if(length(unique(tmp$siteClass)) == 1) {
+        tmp <- subset(tmp, select=-c(siteClass))
+      }
+      if(length(unique(tmp$mag)) == 1) {
+        tmp <- subset(tmp, select=-c(mag))
+      }
+      model.fit <- lmer(resids ~ . - event.num + (1|event.num), data = tmp)
+      summary(model.fit)
+    } else {
+      stop("No random effect model")
+    }
+    coeff <- fixef(model.fit)
+    coeff <- data.frame(t(coeff))
     gm.data$unex.resids <- residuals(model.fit)
     gm.data$pred.fit <- fitted(model.fit)
-    tmp.data <- gm.data
-    tmp.data$resids <- gm.data$unex.resids
-    tmp.data$resids <- (tmp.data$resids - mean(tmp.data$resids))/sd(tmp.data$resids)
+    tmp.data <- data.frame(resids = gm.data$unex.resids)
+    tmp.data$resids <- gm.data$unex.resids <- (gm.data$unex.resids - mean(gm.data$unex.resids))/sd(gm.data$unex.resids)
+    gm.data$unex.resids.Rhyp <- coeff$Rhyp*gm.data$Rhyp + gm.data$unex.resids
+    gm.data$unex.resids.AVS30 <- coeff$AVS30*gm.data$AVS30 + gm.data$unex.resids
+    if(length(unique(gm.data$mag)) == 1) {
+      coeff$mag <- 0
+    }
+    gm.data$unex.resids.mag <- coeff$mag*gm.data$mag + gm.data$unex.resids
+    siteClassHolder <- eqTypeHolder <- rep(0, nrow(gm.data))
     
+    if(length(unique(gm.data$eq.type)) > 1) {
+      coef.eq.type <- subset(coeff, select=grep("eq.type", names(coeff)))
+      name.coef.eq.type <- names(coef.eq.type)
+      name.coef.eq.type <- gsub("eq.type", "", name.coef.eq.type)
+      for(i in name.coef.eq.type) {
+        eqTypeHolder[as.character(gm.data$eq.type) %in% i] <- coef.eq.type[,paste0("eq.type",i)]
+      }
+    }
+    
+    if(length(unique(gm.data$siteClass)) > 1) {
+      coef.siteClass <- subset(coeff, select=grep("siteClass", names(coeff)))
+      name.coef.siteClass <- names(coef.siteClass)
+      name.coef.siteClass <- gsub("siteClass", "", name.coef.siteClass)
+      for(i in name.coef.siteClass) {
+        eqTypeHolder[as.character(gm.data$siteClass) %in% i] <- coef.siteClass[,paste0("siteClass",i)]
+      }
+    }
+    
+    gm.data$unex.resids.siteClass <- siteClassHolder + gm.data$unex.resids
+    gm.data$unex.resids.eq.type <- eqTypeHolder + gm.data$unex.resids
+      
     p0 <- ggQQ(tmp.data)
     p0.1 <- ggplot() + geom_point(data = gm.data, aes(x = pred.fit, y = unex.resids)) +
     xlab("Predicted value") + ylab("Standardized residual")
-    p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = unex.resids)) +
+    p1 <- ggplot() + geom_point(data = gm.data, aes(x = Rhyp, y = unex.resids.Rhyp)) +
       xlab("Hypocentral distance") + ylab("Standardized residual")
-    p2 <- ggplot() + geom_point(data = gm.data, aes(x = AVS30, y = unex.resids)) +
+    p2 <- ggplot() + geom_point(data = gm.data, aes(x = AVS30, y = unex.resids.AVS30)) +
       xlab("VS30") + ylab("Standardized residual")
-    p3 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(mag), y = unex.resids)) +
+    p3 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(mag), y = unex.resids.mag)) +
       xlab("Magnitude") + ylab("Standardized residual")
-    p4 <- ggplot() + geom_boxplot(data = gm.data, aes(x = siteClass, y = unex.resids)) +
+    p4 <- ggplot() + geom_boxplot(data = gm.data, aes(x = siteClass, y = unex.resids.siteClass)) +
       xlab("Site class") + ylab("Standardized residual")
-    p5 <- ggplot() + geom_boxplot(data = gm.data, aes(x = eq.type, y = unex.resids)) +
+    p5 <- ggplot() + geom_boxplot(data = gm.data, aes(x = eq.type, y = unex.resids.eq.type)) +
       xlab("EQ type") + ylab("Standardized residual")
     p6 <- ggplot() + geom_boxplot(data = gm.data, aes(x = factor(event.num), y = unex.resids)) +
       theme(axis.text.x=element_text(angle = 90)) +
@@ -342,8 +362,17 @@ shinyServer(function(input, output) {
     if(is.null(gm.data)){
       return()
     }
-    lm.formula <- react_formula()
-    model.fit <- lm(lm.formula, data = gm.data)
+    gm.data <- gm.data[,c("resids", "Rhyp", "mag", "AVS30", "eq.type", "siteClass")]
+    if(length(unique(gm.data$eq.type)) == 1) {
+      gm.data <- subset(gm.data, select=-c(eq.type))
+    }
+    if(length(unique(gm.data$siteClass)) == 1) {
+      gm.data <- subset(gm.data, select=-c(siteClass))
+    }
+    if(length(unique(gm.data$mag)) == 1) {
+      gm.data <- subset(gm.data, select=-c(mag))
+    }
+    model.fit <- lm(resids ~ ., data = gm.data)
     summary(model.fit)
   }) 
   
@@ -352,14 +381,25 @@ shinyServer(function(input, output) {
     if(is.null(gm.data)){
       return()
     }
-    lm.formula <- react_formula()
-    re.formula <- paste0(lm.formula, "+ (1|event.num)")
-    model.fit <- lmer(re.formula, data = gm.data)
-    summary(model.fit)
+    gm.data <- gm.data[,c("resids", "Rhyp", "mag", "AVS30", "eq.type", "siteClass", "event.num")]
+    if(length(unique(gm.data$event.num)) > 1) {
+      if(length(unique(gm.data$eq.type)) == 1) {
+        gm.data <- subset(gm.data, select=-c(eq.type))
+      }
+      if(length(unique(gm.data$siteClass)) == 1) {
+        gm.data <- subset(gm.data, select=-c(siteClass))
+      }
+      if(length(unique(gm.data$mag)) == 1) {
+        gm.data <- subset(gm.data, select=-c(mag))
+      }
+      model.fit <- lmer(resids ~ . - event.num + (1|event.num), data = gm.data)
+      summary(model.fit)
+    } else {
+      print("No random effect model")
+    }
   }) 
   
   output$spatplot <- renderPlot({
-    if(input$spatial) {
       gm.data <- subdata()
       if(is.null(gm.data)){
         return()
@@ -401,18 +441,29 @@ shinyServer(function(input, output) {
               axis.title.y = element_text(size=16, vjust=.5), 
               axis.title.x = element_text(size=16, vjust=.25))
       print(p)
-    }
   }, height = 1000)
   
   output$spatplot2 <- renderPlot({
-    if(input$spatial) {
     gm.data <- subdata()
     if(is.null(gm.data)){
       return()
     }
-    lm.formula <- react_formula()
-    re.formula <- paste0(lm.formula, "+ (1|event.num)")
-    model.fit <- lmer(re.formula, data = gm.data)
+    tmp <- gm.data[,c("resids", "Rhyp", "mag", "AVS30", "eq.type", "siteClass", "event.num")]
+    if(length(unique(tmp$event.num)) > 1) {
+      if(length(unique(tmp$eq.type)) == 1) {
+        tmp <- subset(tmp, select=-c(eq.type))
+      }
+      if(length(unique(tmp$siteClass)) == 1) {
+        tmp <- subset(tmp, select=-c(siteClass))
+      }
+      if(length(unique(tmp$mag)) == 1) {
+        tmp <- subset(tmp, select=-c(mag))
+      }
+      #re.formula <- resids ~ Rhyp + mag + AVS30 + eq.type + siteClass + (1|event.num)
+      model.fit <- lmer(resids ~ . - event.num + (1|event.num), data = tmp)
+    } else {
+      stop("No random effect model")
+    }
     gm.data$unex.resids <- residuals(model.fit)
     spatial.data <- data.frame(lon = gm.data$stlon, lat = gm.data$stlat, 
                                residual = gm.data$unex.resids)
@@ -451,7 +502,6 @@ shinyServer(function(input, output) {
             axis.title.y = element_text(size=16, vjust=.5), 
             axis.title.x = element_text(size=16, vjust=.25))
     print(p)
-    }
   }, height = 1000)
   
   output$scores <- renderTable({

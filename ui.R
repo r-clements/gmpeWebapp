@@ -64,25 +64,11 @@ shinyUI(pageWithSidebar(
     conditionalPanel(
       condition = "input.eval == 'resid_analysis'",
       wellPanel(
-        p(strong("Linear model fit to the residuals")),
-        p(strong("Which variables to include:")),
-        checkboxInput(inputId = "cb_rhyp", label = "Rhyp", value = TRUE),
-        checkboxInput(inputId = "cb_mag", label = "Mag", value = TRUE),
-        checkboxInput(inputId = "cb_avs30", label = "AVS30", value = TRUE),
-        checkboxInput(inputId = "cb_eqtype", label = "EQ Type", value = TRUE),
-        checkboxInput(inputId = "cb_siteclass", label = "Site class", value = TRUE)
-      ),
-      
-      wellPanel(
-        p(strong("Plot spatial residuals?")),
-        checkboxInput(inputId = "spatial", label = "Yes", value = FALSE),
-        conditionalPanel(
-          condition = "input.spatial == true",
+        p(strong("Spatial residuals")),
           p(strong("View:")),
           radioButtons("view_type", "View type:",
                       list("Average" = "ave",
                             "Smoothed" = "smooth"))
-        )
     ))
   ),
   
@@ -93,7 +79,7 @@ shinyUI(pageWithSidebar(
       tabsetPanel(
         tabPanel("Residual plots", 
                  div(plotOutput("plot_resid", height="1000px"))),
-        tabPanel("Unexplained residual plots",
+        tabPanel("Partial residual plots",
                  div(plotOutput("plot_unex_resid", height="1000px"))),
         tabPanel("Model summary", h4("Linear Model"), verbatimTextOutput("summary"), 
                  h4("Mixed Effects Model"),
