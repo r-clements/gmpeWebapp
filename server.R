@@ -233,6 +233,46 @@ shinyServer(function(input, output) {
                 multiple = TRUE)
   })
   
+  output$plot_eqs <- renderPlot({
+    gm.data <- subdata()
+    if(is.null(gm.data)){
+      return()
+    }
+    eq <- data.frame(lon = gm.data$eqlon, lat = gm.data$eqlat, magnitude = gm.data$mag)
+    eq <- unique(eq)
+    
+    load("jp")
+    p <- ggmap(jp)
+    p <- p +
+      geom_point(data = eq, mapping = aes(x = lon, y = lat, size=magnitude)) +
+      xlab("Longitude") + ylab("Latitude") + 
+      labs(title = "Earthquake locations") +
+      theme(axis.text = element_text(size=14),
+            axis.title.y = element_text(size=16, vjust=.5), 
+            axis.title.x = element_text(size=16, vjust=.25))
+    print(p)
+  }, height=1000)
+  
+  output$plot_eqs2 <- renderPlot({
+    gm.data <- subdata()
+    if(is.null(gm.data)){
+      return()
+    }
+    eq <- data.frame(lon = gm.data$eqlon, lat = gm.data$eqlat, magnitude = gm.data$mag)
+    eq <- unique(eq)
+    
+    load("jp")
+    p <- ggmap(jp)
+    p <- p +
+      geom_point(data = eq, mapping = aes(x = lon, y = lat, size=magnitude)) +
+      xlab("Longitude") + ylab("Latitude") + 
+      labs(title = "Earthquake locations") +
+      theme(axis.text = element_text(size=14),
+            axis.title.y = element_text(size=16, vjust=.5), 
+            axis.title.x = element_text(size=16, vjust=.25))
+    print(p)
+  }, height=1000)
+  
   output$plot_resid <- renderPlot({
     gm.data <- subdata()
     if(is.null(gm.data)){
@@ -302,6 +342,7 @@ shinyServer(function(input, output) {
       coeff$mag <- 0
     }
     gm.data$unex.resids.mag <- coeff$mag*gm.data$mag + gm.data$unex.resids
+    
     siteClassHolder <- eqTypeHolder <- rep(0, nrow(gm.data))
     
     if(length(unique(gm.data$eq.type)) > 1) {
@@ -318,7 +359,7 @@ shinyServer(function(input, output) {
       name.coef.siteClass <- names(coef.siteClass)
       name.coef.siteClass <- gsub("siteClass", "", name.coef.siteClass)
       for(i in name.coef.siteClass) {
-        eqTypeHolder[as.character(gm.data$siteClass) %in% i] <- coef.siteClass[,paste0("siteClass",i)]
+        siteClassHolder[as.character(gm.data$siteClass) %in% i] <- coef.siteClass[,paste0("siteClass",i)]
       }
     }
     

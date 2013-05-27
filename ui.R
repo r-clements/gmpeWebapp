@@ -73,10 +73,12 @@ shinyUI(pageWithSidebar(
   ),
   
   # Show a plot of the generated distribution
-  mainPanel(
+  mainPanel(  
     conditionalPanel(
       condition = "input.eval == 'resid_analysis'",
       tabsetPanel(
+        tabPanel("Earthquakes",
+                 div(plotOutput("plot_eqs", height="1000px"))),
         tabPanel("Residual plots", 
                  div(plotOutput("plot_resid", height="1000px"))),
         tabPanel("Partial residual plots",
@@ -94,6 +96,8 @@ shinyUI(pageWithSidebar(
     conditionalPanel(
       condition = "input.eval == 'error_scores'",
       tabsetPanel(
+        tabPanel("Earthquakes",
+                 div(plotOutput("plot_eqs2", height="1000px"))),
         tabPanel("Scores", tableOutput("scores")),
         tabPanel("Running score plot", 
                  div(plotOutput("runningPlot", height = "1000px")))
